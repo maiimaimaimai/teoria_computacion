@@ -84,7 +84,7 @@ evalC (Case e brs) =
   case evalC e of
     Cons k es ->
       case lookup k brs of
-        Just (xs, body) -> evalC (efecto List xs es body) -- regla Case
+        Just (xs, body) -> evalC (efecto (zip xs es) body) -- regla Case
         Nothing -> Case (Cons k es) brs                -- no match
     e' -> Case e' brs
 
