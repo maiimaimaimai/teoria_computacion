@@ -87,11 +87,6 @@ evalC (Case e brs) =
         Just (xs, body) -> evalC (efecto List xs es body) -- regla Case
         Nothing -> Case (Cons k es) brs                -- no match
     e' -> Case e' brs
-evalC (Iff e1 e2 e3) =
-  case evalC e1 of
-    Cons "True" [] -> evalC e2
-    Cons "False" [] -> evalC e3
-    e1' -> Iff e1' (evalC e2) (evalC e3)
 
 
 
