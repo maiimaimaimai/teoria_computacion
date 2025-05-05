@@ -11,7 +11,9 @@ data Prog = Seq Prog Prog
         
 type K = String
 
-data Br = ((K,[X]),Prog)
+type X = String
+
+type Br = ((K,[X]),Prog)
 
 data Exp = Cons K [Exp]
             | Var X
@@ -35,18 +37,18 @@ upd k v ((k1,v1):kvs)
 
 altas :: [X] -> Mem -> Mem
 altas [] m = m
-altas (x:xs) m = (x,Null):(alta xs m)
+altas (x:xs) m = (x,Null):(altas xs m)
 
 baja :: X -> Mem -> Mem
 baja x [] = []
 baja x ((a,b):abs)
         | a == x = abs 
-        | otherwise = (a,b:bajas2 x abs)
+        | otherwise = (a,b):(baja x abs)
 
 bajas :: [X] -> Mem -> Mem
 bajas [] m = m
 bajas xs [] = []
-bajas (x:xs) m = baja xs (bajas2 x m)
+bajas (x:xs) m = bajas xs (baja x m)
 
 -- bajas :: Eq X => [X] -> Mem -> Mem
 -- bajas [] m = m
@@ -55,9 +57,16 @@ bajas (x:xs) m = baja xs (bajas2 x m)
 --     | otherwise = (k1,v1):(bajas xs kvs)
 
 evalExp :: Mem -> Exp -> Val
-evalExp m Var x = 
+evalExp m (Var x) = 
     case lkup x m of
         Nothing -> error "not in memory"
         Just v -> v
-evalExp m (Cons k []) = K []
-evalExp m [Cons k (e:es)] = ConsVal k (lkup e m:evalExp m es)   
+evalExp m (Cons k es) = 
+    case es of 
+        [] -> ConsVal k []
+        (e:es) -> ConsVal k ((evalExp m e):(evalExp m es))  
+
+evalProg :: Mem -> Prog -> Mem
+evalProg m (Seq p1 p2) = evalProg (evalProg m p1) p2
+evalProg m (Asig xs es) = evalProg (altas xs m) (evalExp m es)
+-- ...
