@@ -3,6 +3,7 @@ module Practico3 where
 import Data.List
 import Data.Maybe
 import Language.Haskell.TH (FieldExp)
+import Text.Read (Lexeme(Symbol))
 
 type Tape = ([Symbol],Symbol, [Symbol])
 
@@ -13,8 +14,8 @@ type K = String
 
 type State = String
 
-data Nat = Zero | Suc Nat
-    deriving (Show, Eq)
+-- data Nat = Zero | Suc Nat
+--     deriving (Show, Eq)
 
 data Action = MoveLeft | MoveRight | Write Symbol
     deriving (Show, Eq)
@@ -25,9 +26,11 @@ type Branch = (Symbol, (Action, State))
 
 lookupSymbol :: Symbol -> [Branch] -> Maybe (Action, State)
 lookupSymbol s [] = Nothing
-lookupSymbol s ((s', b):xs) =
-    if s == s' then Just b
-    else lookupSymbol s xs
+lookupSymbol s ((s', b):xs)
+    | s == s' = Just b
+    | otherwise = case lookupSymbol s xs of
+        Nothing -> if s' == Joker then Just b else Nothing
+        justValue -> justValue
 
 lookupInCode :: State -> Code -> Maybe [Branch]
 lookupInCode s [] = Nothing
@@ -77,24 +80,51 @@ leftSigma (l, s, r) sym
 -- | even   | _       | _     | h            |
 -- | odd    | _       | _     | h            |
 
+par :: Code
+par = [("i", [(Joker, (MoveRight, "even"))]),
+       ("even", [(Joker, (MoveRight, "odd")), (Blank, (Write Blank, "h"))]),
+       ("odd", [(Joker, (MoveRight, "even")), (Blank, (Write Blank, "h"))])]
+
 -- Elemσ
 -- i -(σ1, σ1, _)-> h
 --   -(σ2, σ2, R)-> i
 --   -(#, #, _)-> i
 
+elemSigma :: String -> Code
+elemSigma sym = [("i",
+                    [(Joker, (MoveRight, "lookFor"))]),
+
+                ("lookFor",
+                    [(Cons sym, (MoveRight, "found")),
+                     (Blank, (MoveRight, "notFound")),
+                     (Joker, (MoveRight, "lookFor"))]),
+
+                ("found",
+                    [(Blank, (Write Blank, "h"))]),
+                 
+                ("notFound",
+                    [(Blank, (Write Blank, "h"))])]
+
 --Reverse
--- 
+
 
 -- PARTE 2
 -- 1
   -- a)
+  -- b) Ambas tienen a misma cantidad de casillas (infinita de ambos lados = infinita de la derecha)
+        -- MT ... |4|2|0|1|3|5| ...
+        -- MTr [0|1|2|3|4|5|...
+        -- L' : LL
+        -- R' : RR
+        -- W's : Ws
+            -- puedo meter una cinta en la otra y las acciones son las mismas 
 
 -- 2
 -- a) bˉ:(q,σ1​,σ2​,…,σk​) -> ((γ1​,γ2​,…,γk​),(d1​,d2​,…,dk​),q′)
     -- Cada γi​: símbolo a escribir en la celda del cabezal i
     -- Cada di∈{L,R,S}: dirección de movimiento (Left, Right o Stay) del cabezal i
     -- q′: nuevo estado.
--- b) No
+-- b) Las MT son lo más potente que hay, pueden simular cualquier otra máquina de Turing
 
 -- 3
 -- a) add moveDown moveUp
